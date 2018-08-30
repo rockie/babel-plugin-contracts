@@ -1,27 +1,8 @@
-import generate from "babel-generator";
-
-type Plugin = {
-  visitor: Visitors
-};
-
-type PluginParams = {
-  types: Object;
-  template: (source: string) => (ids: Object) => Node;
-};
-
-type Visitors = {
-  [key: string]: Visitor
-}
-
-type Visitor = (path: NodePath) => void;
+import generate from '@babel/generator';
 
 type Node = {
   type: string;
   node?: void;
-};
-
-type Literal = {
-  type: 'StringLiteral' | 'BooleanLiteral' | 'NumericLiteral' | 'NullLiteral' | 'RegExpLiteral'
 };
 
 type Identifier = {
@@ -41,7 +22,7 @@ type NodePath = {
 /**
  * # Design By Contract Transformer
  */
-export default function ({types: t, template, options}: PluginParams): Plugin {
+export default function ({types: t, template}) {
 
   const defaultNames = {
     assert: 'assert',
@@ -54,16 +35,16 @@ export default function ({types: t, template, options}: PluginParams): Plugin {
 
   let NAMES = Object.assign({}, defaultNames);
 
-  const guard: (ids: {[key: string]: Node}) => Node = template(`
-    if (!condition) {
-      throw new Error(message);
+  const guard = template(`
+    if (!CONDITION) {
+      throw new Error(MESSAGE);
     }
   `);
 
-  const guardFn: (ids: {[key: string]: Node}) => Node = template(`
-    const id = (it) => {
-      conditions;
-      return it;
+  const guardFn = template(`
+    const ID = (IT) => {
+      CONDITIONS;
+      return IT;
     }
   `);
 
@@ -83,14 +64,14 @@ export default function ({types: t, template, options}: PluginParams): Plugin {
         message = t.stringLiteral(`Function ${name}precondition failed: ${generate(condition.node).code}`);
       }
       path.replaceWith(guard({
-        condition: staticCheck(condition),
-        message
+        CONDITION: staticCheck(condition),
+        MESSAGE: message
       }));
       return;
     }
 
     body.traverse({
-      "VariableDeclaration|Function|AssignmentExpression|UpdateExpression|YieldExpression|ReturnStatement" (item: NodePath): void {
+      "VariableDeclaration|Function|AssignmentExpression|UpdateExpression|YieldExpression|ReturnStatement|AwaitExpression" (item: NodePath): void {
         throw path.buildCodeFrameError(`Preconditions cannot have side effects.`);
       },
       ExpressionStatement (statement: NodePath): void {
@@ -105,8 +86,8 @@ export default function ({types: t, template, options}: PluginParams): Plugin {
           message = t.stringLiteral(`Function ${name}precondition failed: ${generate(condition.node).code}`);
         }
         statement.replaceWith(guard({
-          condition: staticCheck(condition),
-          message
+          CONDITION: staticCheck(condition),
+          MESSAGE: message
         }));
       }
     });
@@ -123,8 +104,7 @@ export default function ({types: t, template, options}: PluginParams): Plugin {
     const body: NodePath = path.get('body');
     const fn: NodePath = path.getFunctionParent();
     const name: string = fn.node.id ? `"${fn.node.id.name}" `: ' ';
-    const conditions: Node[] = [];
-    const captures: Node[] = [];
+    const conditions: Node[] = [];    
 
     if (body.isExpressionStatement()) {
       let condition: NodePath = body.get('expression');
@@ -138,13 +118,13 @@ export default function ({types: t, template, options}: PluginParams): Plugin {
         message = t.stringLiteral(`Function ${name}postcondition failed: ${generate(condition.node).code}`);
       }
       conditions.push(guard({
-        condition: staticCheck(condition),
-        message
+        CONDITION: staticCheck(condition),
+        MESSAGE: message
       }));
     }
     else {
       body.traverse({
-        "VariableDeclaration|Function|AssignmentExpression|UpdateExpression|YieldExpression|ReturnStatement" (item: NodePath): void {
+        "VariableDeclaration|Function|AssignmentExpression|UpdateExpression|YieldExpression|ReturnStatement|AwaitExpression" (item: NodePath): void {
           throw path.buildCodeFrameError(`Postconditions cannot have side effects.`);
         },
         CallExpression (call: NodePath): void {
@@ -153,6 +133,7 @@ export default function ({types: t, template, options}: PluginParams): Plugin {
           if (!callee.isIdentifier() || callee.node.name !== NAMES.old || call.scope.hasBinding(NAMES.old) || args.length === 0) {
             return;
           }
+
           const argument: NodePath = args[0];
           const id = call.scope.generateUidIdentifierBasedOnNode(argument.node);
           fn.scope.push({id, init: argument.node, kind: 'const'});
@@ -170,23 +151,24 @@ export default function ({types: t, template, options}: PluginParams): Plugin {
             message = t.stringLiteral(`Function ${name}postcondition failed: ${generate(condition.node).code}`);
           }
           statement.replaceWith(guard({
-            condition: staticCheck(condition),
-            message
+            CONDITION: staticCheck(condition),
+            MESSAGE: message
           }));
         }
       });
       conditions.push(...body.node.body);
     }
 
-    const id = path.scope.generateUidIdentifier(`${fn.node.id ? fn.node.id.name : 'check'}Postcondition`);
+    const id = path.scope.generateUidIdentifier(`${fn.node.id ? fn.node.id.name : 'check'}Postcondition`);    
 
     fn.get('body').get('body')[0].insertBefore(guardFn({
-      id,
-      conditions,
-      it: t.identifier(NAMES.return)
-    }));
+      ID: id,
+      CONDITIONS: conditions,
+      IT: t.identifier(NAMES.return)
+    }));        
 
     path.remove();
+
     return id;
   }
 
@@ -207,16 +189,18 @@ export default function ({types: t, template, options}: PluginParams): Plugin {
       }
       else {
         message = t.stringLiteral(`Assertion failed: ${generate(condition.node).code}`);
-      }
+      }      
+      
       path.replaceWith(guard({
-        condition: staticCheck(condition),
-        message
+        CONDITION: staticCheck(condition),
+        MESSAGE: message
       }));
+
       return;
     }
 
     body.traverse({
-      "VariableDeclaration|Function|AssignmentExpression|UpdateExpression|YieldExpression|ReturnStatement" (item: NodePath): void {
+      "VariableDeclaration|Function|AssignmentExpression|UpdateExpression|YieldExpression|ReturnStatement|AwaitExpression" (item: NodePath): void {
         throw path.buildCodeFrameError(`Assertions cannot have side effects.`);
       },
       ExpressionStatement (statement: NodePath): void {
@@ -233,9 +217,17 @@ export default function ({types: t, template, options}: PluginParams): Plugin {
         else {
           message = t.stringLiteral(`Assertion failed: ${generate(condition.node).code}`);
         }
+
+        console.log(Object.keys(statement));
+
+        console.log(guard({
+          CONDITION: staticCheck(condition),
+          MESSAGE: message
+        }));
+
         statement.replaceWith(guard({
-          condition: staticCheck(condition),
-          message
+          CONDITION: staticCheck(condition),
+          MESSAGE: message
         }));
       }
     });
@@ -266,13 +258,13 @@ export default function ({types: t, template, options}: PluginParams): Plugin {
         message = t.stringLiteral(`Function ${name}invariant failed: ${generate(condition.node).code}`);
       }
       conditions.push(guard({
-        condition: staticCheck(condition),
-        message
+        CONDITION: staticCheck(condition),
+        MESSAGE: message
       }));
     }
     else {
       body.traverse({
-        "VariableDeclaration|Function|AssignmentExpression|UpdateExpression|YieldExpression|ReturnStatement" (item: NodePath): void {
+        "VariableDeclaration|Function|AssignmentExpression|UpdateExpression|YieldExpression|ReturnStatement|AwaitExpression" (item: NodePath): void {
           throw path.buildCodeFrameError(`Invariants cannot have side effects.`);
         },
         ExpressionStatement (statement: NodePath): void {
@@ -287,8 +279,8 @@ export default function ({types: t, template, options}: PluginParams): Plugin {
             message = t.stringLiteral(`Function ${name}invariant failed: ${generate(condition.node).code}`);
           }
           statement.replaceWith(guard({
-            condition: staticCheck(condition),
-            message
+            CONDITION: staticCheck(condition),
+            MESSAGE: message
           }));
         }
       });
@@ -297,9 +289,9 @@ export default function ({types: t, template, options}: PluginParams): Plugin {
 
     const id = path.scope.generateUidIdentifier(`${fn.node.id ? fn.node.id.name : 'check'}Invariant`);
     path.parentPath.get('body')[0].insertBefore(guardFn({
-      id,
-      conditions,
-      it: t.identifier(NAMES.return)
+      ID: id,
+      CONDITIONS: conditions,
+      IT: t.identifier(NAMES.return)
     }));
     path.remove();
     return id;
@@ -320,15 +312,16 @@ export default function ({types: t, template, options}: PluginParams): Plugin {
       throw expression.buildCodeFrameError(`Contract always fails.`);
     }
 
-    return expression;
+    return expression.node;
   }
 
   return {
     visitor: {
       Program (path: NodePath, {opts}: any) {
         if (opts != null && opts.names !== undefined) {
-          NAMES = Object.assign({}, defaultNames, opts.names);
+          NAMES = Object.assign({}, NAMES, opts.names);
         }
+
         return path.traverse({
           Function (fn: NodePath): void {
             if (fn.isArrowFunctionExpression() && !fn.get('body').isBlockStatement()) {
@@ -349,7 +342,6 @@ export default function ({types: t, template, options}: PluginParams): Plugin {
                   }
                   return;
                 }
-
 
                 let id: ?Identifier;
                 let children: ?NodePath[];

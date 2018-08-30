@@ -1,7 +1,13 @@
-require("babel-core/register")({
-  "presets": ["stage-1", "es2015"],
-  "plugins": [
-    //"syntax-flow",
-    "transform-flow-strip-types"
+require("@babel/register")({
+  "parserOpts": {
+    "plugins": ["flow"]
+  },
+  "presets": [
+    ["@babel/preset-env", {                
+      "useBuiltIns": "entry"
+    }]
+  ],
+  "plugins": [    
+    "@babel/plugin-transform-flow-strip-types"
   ]
 });

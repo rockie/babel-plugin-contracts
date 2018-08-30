@@ -1,9 +1,12 @@
 {
+  "parserOpts": {
+    "plugins": ["flow"]
+  },
   "presets": [
-    "stage-0",
-    "es2015"
+    ["@babel/preset-env", {          
+      "modules": false,
+      "useBuiltIns": "entry"
+    }]
   ],
-  "plugins": [
-    "typecheck"
-  ]
+  "plugins": ["@babel/plugin-transform-flow-strip-types"]
 }
