@@ -218,13 +218,6 @@ export default function ({types: t, template}) {
           message = t.stringLiteral(`Assertion failed: ${generate(condition.node).code}`);
         }
 
-        console.log(Object.keys(statement));
-
-        console.log(guard({
-          CONDITION: staticCheck(condition),
-          MESSAGE: message
-        }));
-
         statement.replaceWith(guard({
           CONDITION: staticCheck(condition),
           MESSAGE: message

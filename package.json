@@ -7,7 +7,7 @@
     "build": "babel -d ./lib ./src",
     "prepublishOnly": "npm run build",
     "pretest": "npm run build",
-    "test": "CONTRACTS_SAVE_TRANSFORMED=1 mocha ./test/index.js",
+    "test": "mocha ./test/index.js",
     "watch": "NODE_WATCH=1 mocha --watch"
   },
   "repository": {
