@@ -1,8 +1,6 @@
 # Babel Contracts
 
-This is a [Babel](https://babeljs.io/) plugin for design by contract for JavaScript.
-
-[![Build Status](https://travis-ci.org/codemix/babel-plugin-contracts.svg)](https://travis-ci.org/codemix/babel-plugin-contracts)
+This is a [Babel 7](https://babeljs.io/) plugin for design by contract for JavaScript.
 
 # What?
 
@@ -33,15 +31,15 @@ This allows us to break up our function body into labeled sections, without affe
 
 # Installation
 
-Install via [npm](https://npmjs.org/package/babel-plugin-contracts).
+Install via [npm](https://npmjs.org/package/babel-plugin-contract).
 ```sh
-npm install --save-dev babel-plugin-contracts
+npm install --save-dev babel-plugin-contract
 ```
-Then, in your babel configuration (usually in your `.babelrc` file), add `"contracts"` to your list of plugins:
+Then, in your babel configuration (usually in your `.babelrc` file), add `"contract"` to your list of plugins:
 ```json
 {
   "plugins": [
-    ["contracts", {
+    ["contract", {
       "env": {
         "production": {
           "strip": true
@@ -58,7 +56,7 @@ You can customize the names of the labels and identifiers by specifying a `names
 ```json
 {
   "plugins": [
-    ["contracts", {
+    ["contract", {
       "names": {
         "assert": "assert",
         "precondition": "pre",
@@ -220,18 +218,11 @@ You can customize the names of the labels and identifiers by specifying a `names
 
   Now if a contract fails, the error object will have a descriptive message.
 
-# Migrating from Contractual.
-This plugin uses a very similar syntax to our earlier Design by Contract library, [contractual](https://github.com/codemix/contractual).
-If you're migrating your project there are some differences to be aware of:
-
-1. There is no longer a `main:` section. Anything outside of a contract is considered to be part of the normal program code.
-2. Contracts containing more than one assertion **must** be fully wrapped in a block statement (`{` and `}`), labels no longer act as delimiters.
-3. `__result` is now called `it` in postconditions.
-4. Invariants can be specified at the block / scope level, not just at function entry points.
-5. No longer creates custom error types.
-
+# Fork from babel-plugin-contracts.
+Fork from [babel-plugin-contracts](https://github.com/codemix/babel-plugin-contracts).
+Ship with babel version 7.
 
 # License
 
-Published by [codemix](http://codemix.com/) under a permissive MIT License, see [LICENSE.md](./LICENSE.md).
+MIT License, see [LICENSE.md](./LICENSE.md).
 
