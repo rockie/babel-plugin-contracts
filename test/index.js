@@ -92,6 +92,59 @@ describe('Typecheck', function () {
   });
 });
 
+describe('Env Strip', function () {
+  function loadByEnv(env) {
+    const filename = `${__dirname}/fixtures/env-strip.js`;
+    const source = fs.readFileSync(filename, 'utf8');
+
+    let oldEnv = process.env.NODE_ENV
+    process.env.NODE_ENV = env;
+
+    const transformed = transform(source, {
+      filename: filename,
+      presets: [
+        ["@babel/preset-env", {                
+          "useBuiltIns": "entry"
+        }]
+      ],
+      plugins: [
+        [contracts, {
+          names: {
+            return: 'retVal',
+          },
+          envStrip: true
+        }],
+        "@babel/plugin-transform-flow-strip-types"
+      ]
+    });
+
+    //fs.writeFileSync(`${__dirname}/fixtures/env-strip-${env}.js.transformed`, transformed.code, 'utf8');
+
+    process.env.NODE_ENV = oldEnv;
+
+    const context = {
+      exports: {}
+    };
+    
+    const loaded = new Function('exports', transformed.code);
+    loaded(context.exports);
+    
+    return context; 
+  }
+
+  it('should return development', function () {
+    if (loadByEnv('development').exports.default() !== 'development') {
+      throw new Error('failed');
+    }
+  });
+
+  it('should return production', function () {
+    if (loadByEnv('production').exports.default() !== 'production') {
+      throw new Error('failed');
+    }
+  });
+});
+
 function load (basename) {
   return loadInternal(basename).exports.default;
 }
@@ -134,10 +187,11 @@ function loadInternal (basename) {
   return context;
 }
 
+
+
 function isThenable (thing: mixed): boolean {
   return thing && typeof thing.then === 'function';
 }
-
 
 function ok (basename, ...args) {
   it(`should load '${basename}'`, async function () {

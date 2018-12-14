@@ -33,7 +33,15 @@ export default function ({types: t, template}) {
     old: 'old'
   };
 
+  const defaultEnvNames = { 
+    development: "dev", 
+    test: "test",
+    production: "prod" 
+  };
+
   let NAMES = Object.assign({}, defaultNames);
+  let ENV_NAMES = Object.assign({}, defaultEnvNames);
+  let ENV_LABEL_SET;
 
   const guard = template(`
     if (!CONDITION) {
@@ -290,6 +298,16 @@ export default function ({types: t, template}) {
     return id;
   }
 
+  function extractEnvironmentCode (path: NodePath): void {
+    const body: NodePath = path.get('body');
+
+    if (body.isBlockStatement()) {
+      path.replaceWithMultiple(path.get('body').node.body);
+    }
+    else {
+      path.replaceWith(path.get('body'));
+    }
+  }
 
   function expression (input: string): Function {
     const fn: Function = template(input);
@@ -313,6 +331,10 @@ export default function ({types: t, template}) {
       Program (path: NodePath, {opts}: any) {
         if (opts != null && opts.names !== undefined) {
           NAMES = Object.assign({}, NAMES, opts.names);
+          ENV_NAMES = Object.assign({}, ENV_NAMES, opts.envNames);
+          ENV_LABEL_SET = new Set(Object.values(ENV_NAMES));
+        } else {
+          ENV_LABEL_SET = new Set();
         }
 
         return path.traverse({
@@ -333,6 +355,11 @@ export default function ({types: t, template}) {
                   if (label.node.name === NAMES.precondition || label.node.name === NAMES.postcondition || label.node.name === NAMES.invariant || label.node.name === NAMES.assert) {
                     path.remove();
                   }
+                  return;
+                }
+
+                if (opts.envStrip && ENV_NAMES[process.env.NODE_ENV] !== label.node.name) {
+                  path.remove();
                   return;
                 }
 
@@ -357,6 +384,9 @@ export default function ({types: t, template}) {
                   children = parent.get('body');
                   const first: NodePath = children[0];
                   first.insertAfter(t.expressionStatement(t.callExpression(id, [])))
+                } else if (ENV_LABEL_SET.has(label.node.name)) {
+                  extractEnvironmentCode(path);
+                  return;
                 }
                 parent.traverse({
                   Function (path: NodePath): void {
@@ -381,12 +411,21 @@ export default function ({types: t, template}) {
             if (label.node.name === NAMES.assert) {
               if (opts.strip || (opts.env && opts.env[process.env.NODE_ENV] && opts.env[process.env.NODE_ENV].strip)) {
                 path.remove();
-              }
+              } 
               else {
                 assembleAssertion(path);
               }
               return;
-            }
+            } else if (opts.envStrip) {
+
+              if (ENV_NAMES[process.env.NODE_ENV] !== label.node.name) {
+                extractEnvironmentCode(path);
+              } else {
+                path.remove();
+              }
+              
+              return;
+            } 
           }
         });
       }
