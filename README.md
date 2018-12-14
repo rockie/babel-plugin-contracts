@@ -70,6 +70,18 @@ You can customize the names of the labels and identifiers by specifying a `names
 }
 ```
 
+Strip codes with unspecified labels 
+
+```json
+{
+  "plugins": [
+    ["contract", {
+      "stripUnless": "dev"
+    }]
+  ]
+}
+```
+
 ## Examples
 
 1. **Precondition Only.**

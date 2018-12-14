@@ -43,6 +43,8 @@ export default function ({types: t, template}) {
   let ENV_NAMES = Object.assign({}, defaultEnvNames);
   let ENV_LABEL_SET;
 
+  let THE_ONLY_LABEL_TO_KEEP;
+
   const guard = template(`
     if (!CONDITION) {
       throw new Error(MESSAGE);
@@ -337,6 +339,12 @@ export default function ({types: t, template}) {
           ENV_LABEL_SET = new Set();
         }
 
+        if (opts != null && opts.stripUnless !== undefined) {
+          THE_ONLY_LABEL_TO_KEEP = opts.stripUnless;
+        } else {
+          THE_ONLY_LABEL_TO_KEEP = ENV_NAMES[process.env.NODE_ENV];
+        }
+
         return path.traverse({
           Function (fn: NodePath): void {
             if (fn.isArrowFunctionExpression() && !fn.get('body').isBlockStatement()) {
@@ -358,7 +366,7 @@ export default function ({types: t, template}) {
                   return;
                 }
 
-                if (opts.envStrip && ENV_NAMES[process.env.NODE_ENV] !== label.node.name) {
+                if (opts.envStrip && THE_ONLY_LABEL_TO_KEEP !== label.node.name) {
                   path.remove();
                   return;
                 }
@@ -418,7 +426,7 @@ export default function ({types: t, template}) {
               return;
             } else if (opts.envStrip) {
 
-              if (ENV_NAMES[process.env.NODE_ENV] !== label.node.name) {
+              if (THE_ONLY_LABEL_TO_KEEP !== label.node.name) {
                 extractEnvironmentCode(path);
               } else {
                 path.remove();

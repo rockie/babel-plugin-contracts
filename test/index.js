@@ -93,12 +93,14 @@ describe('Typecheck', function () {
 });
 
 describe('Env Strip', function () {
-  function loadByEnv(env) {
+  function loadByEnv(env, useProcEnv) {
     const filename = `${__dirname}/fixtures/env-strip.js`;
     const source = fs.readFileSync(filename, 'utf8');
 
     let oldEnv = process.env.NODE_ENV
-    process.env.NODE_ENV = env;
+    if (useProcEnv) {
+      process.env.NODE_ENV = env;
+    }
 
     const transformed = transform(source, {
       filename: filename,
@@ -112,7 +114,8 @@ describe('Env Strip', function () {
           names: {
             return: 'retVal',
           },
-          envStrip: true
+          envStrip: true,
+          ...(useProcEnv ? {} : { stripUnless: env })
         }],
         "@babel/plugin-transform-flow-strip-types"
       ]
@@ -120,7 +123,9 @@ describe('Env Strip', function () {
 
     //fs.writeFileSync(`${__dirname}/fixtures/env-strip-${env}.js.transformed`, transformed.code, 'utf8');
 
-    process.env.NODE_ENV = oldEnv;
+    if (useProcEnv) {
+      process.env.NODE_ENV = oldEnv;
+    }
 
     const context = {
       exports: {}
@@ -132,14 +137,26 @@ describe('Env Strip', function () {
     return context; 
   }
 
+  it('should return development by process env', function () {
+    if (loadByEnv('development', true).exports.default() !== 'development') {
+      throw new Error('failed');
+    }
+  });
+
+  it('should return production by process env', function () {
+    if (loadByEnv('production', true).exports.default() !== 'production') {
+      throw new Error('failed');
+    }
+  });
+
   it('should return development', function () {
-    if (loadByEnv('development').exports.default() !== 'development') {
+    if (loadByEnv('dev').exports.default() !== 'development') {
       throw new Error('failed');
     }
   });
 
   it('should return production', function () {
-    if (loadByEnv('production').exports.default() !== 'production') {
+    if (loadByEnv('prod').exports.default() !== 'production') {
       throw new Error('failed');
     }
   });
