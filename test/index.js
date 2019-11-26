@@ -162,6 +162,77 @@ describe('Env Strip', function () {
   });
 });
 
+describe('Env Strip with strip', function () {
+  function loadByEnv(env, useProcEnv) {
+    const filename = `${__dirname}/fixtures/env-strip.js`;
+    const source = fs.readFileSync(filename, 'utf8');
+
+    let oldEnv = process.env.NODE_ENV
+    if (useProcEnv) {
+      process.env.NODE_ENV = env;
+    }
+
+    const transformed = transform(source, {
+      filename: filename,
+      presets: [
+        ["@babel/preset-env", {                
+          "useBuiltIns": "entry"
+        }]
+      ],
+      plugins: [
+        [contracts, {
+          names: {
+            return: 'retVal',
+          },
+          strip: true,
+          envStrip: true,
+          ...(useProcEnv ? {} : { stripUnless: env })
+        }],
+        "@babel/plugin-transform-flow-strip-types"
+      ]
+    });
+
+    //fs.writeFileSync(`${__dirname}/fixtures/env-strip-${env}.js.transformed`, transformed.code, 'utf8');
+
+    if (useProcEnv) {
+      process.env.NODE_ENV = oldEnv;
+    }
+
+    const context = {
+      exports: {}
+    };
+    
+    const loaded = new Function('exports', transformed.code);
+    loaded(context.exports);
+    
+    return context; 
+  }
+
+  it('should return development by process env', function () {
+    if (loadByEnv('development', true).exports.default() !== 'development') {
+      throw new Error('failed');
+    }
+  });
+
+  it('should return production by process env', function () {
+    if (loadByEnv('production', true).exports.default() !== 'production') {
+      throw new Error('failed');
+    }
+  });
+
+  it('should return development', function () {
+    if (loadByEnv('dev').exports.default() !== 'development') {
+      throw new Error('failed');
+    }
+  });
+
+  it('should return production', function () {
+    if (loadByEnv('prod').exports.default() !== 'production') {
+      throw new Error('failed');
+    }
+  });
+});
+
 function load (basename) {
   return loadInternal(basename).exports.default;
 }
