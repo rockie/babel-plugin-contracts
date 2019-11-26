@@ -179,7 +179,7 @@ Strip codes with unspecified labels
   }
   ```
 
-4. **Assertions**
+5. **Assertions**
 
   Assertions verify that something is truthy and throw an error if the assertion fails. They run where they are specified:
 
@@ -209,7 +209,7 @@ Strip codes with unspecified labels
   }
   ```
 
-5. **Error Messages**
+6. **Error Messages**
 
   Often it's nice to provide an error message for the contract that failed, for example:
 
@@ -229,6 +229,37 @@ Strip codes with unspecified labels
   ```
 
   Now if a contract fails, the error object will have a descriptive message.
+
+7. **Environment-specific Code**
+
+  With envStrip option turned on, only code labeled with the current environment will be kept
+
+  ```json
+  {
+    "plugins": [
+      ["contract", {
+        "envStrip": true
+      }]
+    ]
+  }
+  ```
+
+  The environment label can be customized by envNames
+
+  ```json
+  {
+    "plugins": [
+      ["contract", {
+        "envStrip": true,
+        "envNames": {
+          "development": "dev",
+          "test": "test",
+          "production": "prod"
+        }
+      }]
+    ]
+  }
+  ```
 
 # Fork from babel-plugin-contracts.
 Fork from [babel-plugin-contracts](https://github.com/codemix/babel-plugin-contracts).
