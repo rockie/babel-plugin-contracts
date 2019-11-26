@@ -58,6 +58,8 @@ export default function ({types: t, template}) {
     }
   `);
 
+  const NODE_ENV = process.env.NODE_ENV || 'development';
+
   function assemblePrecondition (path: NodePath): void {
     const body: NodePath = path.get('body');
     const fn: NodePath = path.getFunctionParent();
@@ -339,10 +341,12 @@ export default function ({types: t, template}) {
           ENV_LABEL_SET = new Set();
         }
 
+        const IN_FUNC_TO_STRIP = new Set([NAMES.precondition, NAMES.postcondition, NAMES.invariant, NAMES.assert]);
+
         if (opts != null && opts.stripUnless !== undefined) {
           THE_ONLY_LABEL_TO_KEEP = opts.stripUnless;
         } else {
-          THE_ONLY_LABEL_TO_KEEP = ENV_NAMES[process.env.NODE_ENV];
+          THE_ONLY_LABEL_TO_KEEP = ENV_NAMES[NODE_ENV];
         }
 
         return path.traverse({
@@ -359,11 +363,9 @@ export default function ({types: t, template}) {
 
               LabeledStatement (path: NodePath): void {
                 const label: NodePath = path.get('label');
-                if (opts.strip || (opts.env && opts.env[process.env.NODE_ENV] && opts.env[process.env.NODE_ENV].strip)) {
-                  if (label.node.name === NAMES.precondition || label.node.name === NAMES.postcondition || label.node.name === NAMES.invariant || label.node.name === NAMES.assert) {
+                if ((opts.strip || (opts.env && opts.env[NODE_ENV] && opts.env[NODE_ENV].strip)) && IN_FUNC_TO_STRIP.has(label.node.name)) {                  
                     path.remove();
-                  }
-                  return;
+                    return;
                 }
 
                 if (opts.envStrip && THE_ONLY_LABEL_TO_KEEP !== label.node.name) {
@@ -417,7 +419,7 @@ export default function ({types: t, template}) {
             const label: NodePath = path.get('label');
 
             if (label.node.name === NAMES.assert) {
-              if (opts.strip || (opts.env && opts.env[process.env.NODE_ENV] && opts.env[process.env.NODE_ENV].strip)) {
+              if (opts.strip || (opts.env && opts.env[NODE_ENV] && opts.env[NODE_ENV].strip)) {
                 path.remove();
               } 
               else {
