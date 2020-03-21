@@ -31,6 +31,7 @@
   },
   "homepage": "https://github.com/rockie/babel-plugin-contracts",
   "dependencies": {
+    "@babel/generator": "^7.9.0",
     "core-js": "^3.6.4"
   },
   "devDependencies": {
@@ -39,7 +40,7 @@
     "@babel/plugin-transform-flow-strip-types": "^7.9.0",
     "@babel/polyfill": "^7.8.7",
     "@babel/preset-env": "^7.9.0",
-    "@babel/register": "^7.9.0",    
+    "@babel/register": "^7.9.0",
     "mocha": "^7.1.1",
     "should": "^13.2.3"
   },

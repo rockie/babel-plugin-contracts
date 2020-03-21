@@ -106,7 +106,7 @@ describe('Env Strip', function () {
       filename: filename,
       presets: [
         ["@babel/preset-env", {                
-          "useBuiltIns": "entry"
+          "useBuiltIns": "entry", "corejs": 3
         }]
       ],
       plugins: [
@@ -176,7 +176,7 @@ describe('Env Strip with strip', function () {
       filename: filename,
       presets: [
         ["@babel/preset-env", {                
-          "useBuiltIns": "entry"
+          "useBuiltIns": "entry", "corejs": 3
         }]
       ],
       plugins: [
@@ -244,7 +244,7 @@ function loadInternal (basename) {
     filename: filename,
     presets: [
       ["@babel/preset-env", {                
-        "useBuiltIns": "entry"
+        "useBuiltIns": "entry", "corejs": 3
       }]
     ],
     plugins: [
