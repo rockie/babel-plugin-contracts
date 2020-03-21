@@ -397,7 +397,10 @@ export default function ({types: t, template}) {
                 } else if (ENV_LABEL_SET.has(label.node.name)) {
                   extractEnvironmentCode(path);
                   return;
+                } else {
+                  return;
                 }
+
                 parent.traverse({
                   Function (path: NodePath): void {
                     // This will be handled by the outer visitor, so skip it.
