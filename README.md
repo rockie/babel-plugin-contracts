@@ -1,6 +1,6 @@
 # Babel Contracts
 
-This is a [Babel 7](https://babeljs.io/) plugin for design by contract for JavaScript.
+This is a [Babel 7](https://babeljs.io/) plugin for design by contract for JavaScript. ![build status](https://travis-ci.org/rockie/babel-plugin-contracts.svg?branch=master)
 
 # What?
 
